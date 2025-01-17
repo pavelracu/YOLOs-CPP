@@ -43,6 +43,8 @@ case "$architecture" in
         ;;
 esac
 
+echo "ONNX Architecture GPU?" ${ONNXRUNTIME_GPU}
+
 # GPU
 if [ ${ONNXRUNTIME_GPU} == 1 ]; then
     ONNXRUNTIME_PATH="onnxruntime-${ONNXRUNTIME_PLATFORM}-${ONNXRUNTIME_ARCH}-gpu-${ONNXRUNTIME_VERSION}"
