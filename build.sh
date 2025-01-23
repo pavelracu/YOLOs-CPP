@@ -35,7 +35,7 @@ case "$architecture" in
         ONNXRUNTIME_ARCH="arm"
         ;;
     aarch64|arm64)
-        ONNXRUNTIME_ARCH="arm64"
+        ONNXRUNTIME_ARCH="aarch64"
         ;;
     *)
         echo "Unsupported architecture: $architecture"
