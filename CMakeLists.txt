@@ -4,6 +4,9 @@ project(yolo_ort)
 # Define ONNX Runtime directory
 set(ONNXRUNTIME_DIR "${CMAKE_SOURCE_DIR}/onnxruntime-linux-x64-1.19.2")
 message(STATUS "ONNXRUNTIME_DIR: ${ONNXRUNTIME_DIR}")
+message(STATUS "BUILD_IMAGE: ${BUILD_IMAGE}")
+message(STATUS "BUILD_CAMERA: ${BUILD_CAMERA}")
+message(STATUS "BUILD_VIDEO: ${BUILD_VIDEO}")
 
 # Find OpenCV
 find_package(OpenCV REQUIRED)
