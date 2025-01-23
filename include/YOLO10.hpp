@@ -242,7 +242,9 @@ namespace utils {
             cv::rectangle(image, cv::Point(detection.x1, detection.y1), cv::Point(detection.x2, detection.y2), color, 2, cv::LINE_AA);
 
             // Prepare label text with class name and confidence percentage
-            const std::string& label = classNames[detection.obj_id];
+            // const std::string& label = classNames[detection.obj_id];
+            const std::string label = "ID: " + std::to_string(detection.obj_id) + " " + classNames[detection.obj_id];
+
             std::string confidenceText = std::to_string(static_cast<int>(detection.accuracy * 100)) + "%";
 
             // Define text properties for labels
@@ -660,29 +662,21 @@ std::vector<Detection> YOLO10Detector::postprocess(const cv::Size &originalImage
 }
 
 // Detect function implementation
-std::vector<Detection> YOLO10Detector::detect(const cv::Mat& image) {
+std::vector<Detection> YOLO10Detector::detect(const cv::Mat &image) {
     // Start timing the overall detection process
-    ScopedTimer timer("Overall detection"); // Commented out for performance
+    ScopedTimer timer("Overall detection");
 
-    float* blobPtr = nullptr; // Pointer to hold preprocessed image data
-    // Define the shape of the input tensor (batch size, channels, height, width)
+    float* blobPtr = nullptr;  // Pointer to hold preprocessed image data
     std::vector<int64_t> inputTensorShape = {1, 3, inputImageShape.height, inputImageShape.width};
 
-    // Preprocess the image and obtain a pointer to the blob
+    // Preprocess the image
     cv::Mat inputImage = preprocess(image, blobPtr, inputTensorShape);
-
-    // Compute the total number of elements in the input tensor
     size_t inputTensorSize = utils::vectorProduct(inputTensorShape);
-
-    // Create a vector from the blob data for ONNX Runtime input
     std::vector<float> inputTensorValues(blobPtr, blobPtr + inputTensorSize);
+    delete[] blobPtr;
 
-    delete[] blobPtr; // Free the allocated memory for the blob
-
-    // Create an Ort memory info object (can be cached if used repeatedly)
+    // Create input tensor
     static Ort::MemoryInfo memoryInfo = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
-
-    // Create input tensor object using the preprocessed data
     Ort::Value inputTensor = Ort::Value::CreateTensor<float>(
         memoryInfo,
         inputTensorValues.data(),
@@ -691,7 +685,7 @@ std::vector<Detection> YOLO10Detector::detect(const cv::Mat& image) {
         inputTensorShape.size()
     );
 
-    // Run the inference session with the input tensor and retrieve output tensors
+    // Run the inference session
     std::vector<Ort::Value> outputTensors = session.Run(
         Ort::RunOptions{nullptr},
         inputNames.data(),
@@ -701,11 +695,27 @@ std::vector<Detection> YOLO10Detector::detect(const cv::Mat& image) {
         numOutputNodes
     );
 
-    // Determine the resized image shape based on input tensor shape
-    cv::Size resizedImageShape(static_cast<int>(inputTensorShape[3]), static_cast<int>(inputTensorShape[2]));
-
-    // Postprocess the output tensors to obtain detections
+    cv::Size resizedImageShape(inputTensorShape[3], inputTensorShape[2]);
     std::vector<Detection> detections = postprocess(image.size(), resizedImageShape, outputTensors);
 
-    return detections; // Return the vector of detections
+    // Convert detections to the format required by the tracker
+    std::vector<cv::Rect> bboxes;
+    std::vector<float> confidences;
+    for (const auto &det : detections) {
+        bboxes.emplace_back(cv::Rect(det.x1, det.y1, det.x2 - det.x1, det.y2 - det.y1));
+        confidences.emplace_back(det.accuracy);
+    }
+
+    // Update the tracker with the current frame's detections
+    std::vector<TrackedObject> trackedObjects = tracker.update(bboxes, confidences);
+
+    // Map tracker results back to the Detection format
+    std::vector<Detection> trackedDetections;
+    for (const auto &obj : trackedObjects) {
+        trackedDetections.emplace_back(
+            Detection(obj.bbox.x, obj.bbox.x + obj.bbox.width, obj.bbox.y, obj.bbox.y + obj.bbox.height, obj.id, obj.confidence));
+    }
+
+    return trackedDetections;
 }
+
