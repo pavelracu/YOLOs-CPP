@@ -36,18 +36,18 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Set include directories for all executables
-#target_include_directories(image_inference PRIVATE "${ONNXRUNTIME_DIR}/include")
-#target_include_directories(camera_inference PRIVATE "${ONNXRUNTIME_DIR}/include")
+target_include_directories(image_inference PRIVATE "${ONNXRUNTIME_DIR}/include")
+target_include_directories(camera_inference PRIVATE "${ONNXRUNTIME_DIR}/include")
 target_include_directories(video_inference PRIVATE "${ONNXRUNTIME_DIR}/include")
 
 # Set compile features for all executables
-#target_compile_features(image_inference PRIVATE cxx_std_14)
-#target_compile_features(camera_inference PRIVATE cxx_std_14)
+target_compile_features(image_inference PRIVATE cxx_std_14)
+target_compile_features(camera_inference PRIVATE cxx_std_14)
 target_compile_features(video_inference PRIVATE cxx_std_14)
 
 # Link libraries for all executables
-#target_link_libraries(image_inference ${OpenCV_LIBS})
-#target_link_libraries(camera_inference ${OpenCV_LIBS})
+target_link_libraries(image_inference ${OpenCV_LIBS})
+target_link_libraries(camera_inference ${OpenCV_LIBS})
 target_link_libraries(video_inference ${OpenCV_LIBS})
 
 if(WIN32)
