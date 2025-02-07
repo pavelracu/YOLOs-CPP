@@ -1,16 +1,14 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(yolo_ort)
 
-option(ONNXRUNTIME_DIR "Path to built ONNX Runtime directory." STRING)
+# Define ONNX Runtime directory
+set(ONNXRUNTIME_DIR "${CMAKE_SOURCE_DIR}/onnxruntime-linux-x64-1.19.2")
 message(STATUS "ONNXRUNTIME_DIR: ${ONNXRUNTIME_DIR}")
 
+# Find OpenCV
 find_package(OpenCV REQUIRED)
 
-include_directories("include/")
-include_directories("/usr/include/opencv4/")
-
-set(ONNXRUNTIME_DIR "${CMAKE_SOURCE_DIR}/onnxruntime-linux-x64-1.19.2")
-
+# Include directories
 include_directories(
     "include/"
     "/usr/include/opencv4/"
@@ -18,57 +16,34 @@ include_directories(
     "${ONNXRUNTIME_DIR}/include/onnxruntime/core"
 )
 
+# Link directories
 link_directories(${ONNXRUNTIME_DIR}/lib)
 
-# Add executable for image inference
-add_executable(image_inference
-               src/image_inference.cpp)
+# Define executables
+set(TARGETS image_inference camera_inference video_inference)
+foreach(TARGET ${TARGETS})
+    add_executable(${TARGET} src/${TARGET}.cpp)
+    target_include_directories(${TARGET} PRIVATE "${ONNXRUNTIME_DIR}/include")
+    target_compile_features(${TARGET} PRIVATE cxx_std_14)
+endforeach()
 
-## Add executable for camera inference
-add_executable(camera_inference
-               src/camera_inference.cpp)
+# Link libraries
+foreach(TARGET ${TARGETS})
+    target_link_libraries(${TARGET} ${OpenCV_LIBS} ${ONNXRUNTIME_DIR}/lib/libonnxruntime.so -pthread)
+endforeach()
 
-# Add executable for video inference
-add_executable(video_inference
-               src/video_inference.cpp)
-
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# Set include directories for all executables
-target_include_directories(image_inference PRIVATE "${ONNXRUNTIME_DIR}/include")
-target_include_directories(camera_inference PRIVATE "${ONNXRUNTIME_DIR}/include")
-target_include_directories(video_inference PRIVATE "${ONNXRUNTIME_DIR}/include")
-
-# Set compile features for all executables
-target_compile_features(image_inference PRIVATE cxx_std_14)
-target_compile_features(camera_inference PRIVATE cxx_std_14)
-target_compile_features(video_inference PRIVATE cxx_std_14)
-
-# Link libraries for all executables
-target_link_libraries(image_inference ${OpenCV_LIBS})
-target_link_libraries(camera_inference ${OpenCV_LIBS})
-target_link_libraries(video_inference ${OpenCV_LIBS})
-
+# Platform-specific linking
 if(WIN32)
-    message(STATUS "We are building on Windows!")
-    # Specific Linux build commands or flags
-    target_link_libraries(image_inference "${ONNXRUNTIME_DIR}/lib/onnxruntime.lib")
-    target_link_libraries(camera_inference "${ONNXRUNTIME_DIR}/lib/onnxruntime.lib")
-    target_link_libraries(video_inference "${ONNXRUNTIME_DIR}/lib/onnxruntime.lib")
-
+    message(STATUS "Building on Windows!")
+    foreach(TARGET ${TARGETS})
+        target_link_libraries(${TARGET} "${ONNXRUNTIME_DIR}/lib/onnxruntime.lib")
+    endforeach()
 elseif(APPLE)
-    message(STATUS "We are building on macOS!")
-    # Specific macOS build commands or flags
-    target_link_libraries(image_inference "${ONNXRUNTIME_DIR}/lib/libonnxruntime.dylib")
-    target_link_libraries(camera_inference "${ONNXRUNTIME_DIR}/lib/libonnxruntime.dylib")
-    target_link_libraries(video_inference "${ONNXRUNTIME_DIR}/lib/libonnxruntime.dylib")
-
+    message(STATUS "Building on macOS!")
+    foreach(TARGET ${TARGETS})
+        target_link_libraries(${TARGET} "${ONNXRUNTIME_DIR}/lib/libonnxruntime.dylib")
+    endforeach()
 elseif(UNIX)
-    message(STATUS "We are building on Linux!")
-    # Specific Linux build commands or flags
-    target_link_libraries(video_inference ${OpenCV_LIBS} ${ONNXRUNTIME_DIR}/lib/libonnxruntime.so -pthread)
-    target_link_libraries(camera_inference ${OpenCV_LIBS} ${ONNXRUNTIME_DIR}/lib/libonnxruntime.so -pthread)
-    target_link_libraries(image_inference ${OpenCV_LIBS} ${ONNXRUNTIME_DIR}/lib/libonnxruntime.so -pthread)
-
+    message(STATUS "Building on Linux!")
+    # Linux already links correctly above
 endif()
