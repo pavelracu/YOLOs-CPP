@@ -67,7 +67,7 @@ int main()
     const std::string modelPath = "../models/yolo11n.onnx"; // YOLOv11 
 
     // Initialize the YOLO detector with the chosen model and labels
-    bool isGPU = true; // Set to false for CPU processing
+    bool isGPU = false; // Set to false for CPU processing
     // YOLO7Detector detector(modelPath, labelsPath, isGPU);
     // YOLO5Detector detector(modelPath, labelsPath, isGPU);  // Uncomment for YOLOv5
     // YOLO8Detector detector(modelPath, labelsPath, isGPU);  // Uncomment for YOLOv8
@@ -93,10 +93,17 @@ int main()
 
     // Draw bounding boxes on the image
     detector.drawBoundingBox(image, results); // simple bbox drawing
-    // detector.drawBoundingBoxMask(image, results); // Uncomment for mask drawing
+    detector.drawBoundingBoxMask(image, results); // Uncomment for mask drawing
 
     // Display the image
-    cv::imshow("Detections", image);
+    // cv::imshow("Detections", image);
+    std::string outputPath = "../data/dogs_processed.jpg";
+    bool success = cv::imwrite(outputPath, image);
+    if (success) {
+        std::cout << "Processed image saved at: " << outputPath << std::endl;
+    } else {
+        std::cerr << "Error: Failed to save the processed image!" << std::endl;
+    }
     cv::waitKey(0); // Wait for a key press to close the window
 
     return 0;

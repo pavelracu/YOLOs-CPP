@@ -48,11 +48,8 @@
 #include <condition_variable>
 #include <opencv2/opencv.hpp>
 
-// #include "YOLO5.hpp"  // Uncomment for YOLOv5
-// #include "YOLO7.hpp"  // Uncomment for YOLOv7
-// #include "YOLO8.hpp"  // Uncomment for YOLOv8
-// #include "YOLO10.hpp" // Uncomment for YOLOv10
-#include "YOLO11.hpp" // Uncomment for YOLOv10
+
+#include "YOLO11.hpp" // Uncomment for YOLOv11
 
 // Thread-safe queue implementation
 template <typename T>
@@ -95,9 +92,9 @@ private:
 int main()
 {
     // Paths to the model, labels, input video, and output video
-    const std::string labelsPath = "../models/coco.names";
-    const std::string videoPath = "../data/SIG_experience_center.mp4"; // Input video path
-    const std::string outputPath = "../data/SIG_experience_center_processed.mp4"; // Output video path
+    const std::string labelsPath  = "../models/coco.names";
+    const std::string videoPath   = "../data/SIG_experience_center.mp4"; // Input video path
+    const std::string outputPath  = "../data/SIG_experience_center_processed.mp4"; // Output video path
 
     // Model paths for different YOLO versions
     const std::string modelPath = "../models/yolo11n.onnx"; // YOLOv11
@@ -136,50 +133,89 @@ int main()
 
     // Flag to indicate processing completion
     std::atomic<bool> processingDone(false);
+    int frameSkip = std::max(1, fps / 10); // Dynamically set frame skipping ratio
 
-
-    // Capture thread
+    // Capture thread with frame skipping
     std::thread captureThread([&]() {
         cv::Mat frame;
         int frameCount = 0;
-        while (cap.read(frame))
-        {
-            frameQueue.enqueue(frame.clone()); // Clone to ensure thread safety
+        
+        std::cout << "Processing every " << frameSkip << "th frame" << std::endl;
+
+        while (cap.read(frame)) {
+            if (frameCount % frameSkip == 0) {
+                frameQueue.enqueue(frame.clone()); // Clone to ensure thread safety
+            }
             frameCount++;
-            // std::cout << "Frame " << frameCount << " enqueued." << std::endl;
         }
         frameQueue.setFinished();
     });
+    
+    // Get total frames in the video
+    int totalFrames = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_COUNT));
+    std::cout << "Total frames in video: " << totalFrames << std::endl;
+    
+    // Multi-threaded Processing (4 Threads)
+    int numProcessingThreads = 4;
+    std::vector<std::thread> processingThreads;
+    std::atomic<int> processedFrames(0);
 
-    // Processing thread
-    std::thread processingThread([&]() {
+    auto start = std::chrono::high_resolution_clock::now();
+    auto processingTask = [&]() {
         cv::Mat frame;
-        int frameIndex = 0;
-        while (frameQueue.dequeue(frame))
-        {
+    
+        while (frameQueue.dequeue(frame)) {
             // Detect objects in the frame
             std::vector<Detection> results = detector.detect(frame);
 
             // Draw bounding boxes on the frame
-            detector.drawBoundingBoxMask(frame, results); // Uncomment for mask drawing
+            detector.drawBoundingBoxMask(frame, results);
+
             // Enqueue the processed frame
-            processedQueue.enqueue(std::make_pair(frameIndex++, frame));
+            processedQueue.enqueue(std::make_pair(processedFrames++, frame));
+
+            // Print progress every 10 frames
+            if (processedFrames % 10 == 0) {
+                int percentage = (processedFrames * 100) / (totalFrames / frameSkip);
+                std::cout << "Processed " << processedFrames << "/" << (totalFrames / frameSkip) 
+                        << " frames (" << percentage << "%)" << std::endl;
+            }
+
+            // Compute FPS every 30 frames
+            if (processedFrames % 30 == 0) {
+                auto end = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double> elapsed = end - start;
+                double fps = processedFrames / elapsed.count();
+                std::cout << "AI Processing FPS: " << fps << " frames/sec" << std::endl;
+            }
         }
-        processedQueue.setFinished();
-    });
+    };
+
+    // Start multiple processing threads
+    for (int i = 0; i < numProcessingThreads; ++i) {
+        processingThreads.emplace_back(processingTask);
+    }
 
     // Writing thread
     std::thread writingThread([&]() {
         std::pair<int, cv::Mat> processedFrame;
-        while (processedQueue.dequeue(processedFrame))
-        {
+        while (processedQueue.dequeue(processedFrame)) {
             out.write(processedFrame.second);
         }
     });
 
+    // Wait for all processing threads to finish
+    for (auto &thread : processingThreads) {
+        thread.join();
+    }
+
+    // Final FPS calculation
+    auto totalEnd = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> totalElapsed = totalEnd - start;
+    double finalFPS = processedFrames / totalElapsed.count();
+    std::cout << "Final AI Processing FPS: " << finalFPS << " frames/sec" << std::endl;
     // Wait for all threads to finish
     captureThread.join();
-    processingThread.join();
     writingThread.join();
 
     // Release resources
