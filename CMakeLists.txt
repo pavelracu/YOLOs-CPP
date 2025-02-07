@@ -20,7 +20,8 @@ include_directories(
 link_directories(${ONNXRUNTIME_DIR}/lib)
 
 # Define executables
-set(TARGETS image_inference camera_inference video_inference)
+#set(TARGETS image_inference camera_inference video_inference)
+set(TARGETS video_inference)
 foreach(TARGET ${TARGETS})
     add_executable(${TARGET} src/${TARGET}.cpp)
     target_include_directories(${TARGET} PRIVATE "${ONNXRUNTIME_DIR}/include")
