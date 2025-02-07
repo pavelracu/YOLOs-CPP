@@ -48,11 +48,6 @@
 #include <condition_variable>
 #include <opencv2/opencv.hpp>
 
-// #include "YOLO5.hpp"  // Uncomment for YOLOv5
-// #include "YOLO7.hpp"  // Uncomment for YOLOv7
-// #include "YOLO8.hpp"  // Uncomment for YOLOv8
-// #include "YOLO10.hpp" // Uncomment for YOLOv10
-#include "YOLO11.hpp" // Uncomment for YOLOv10
 
 #include "YOLO11.hpp" // Uncomment for YOLOv11
 
@@ -107,7 +102,6 @@ int main()
 
     // Initialize the YOLO detector
     bool isGPU = false; // Set to false for CPU processing
-    YOLO11Detector detector(modelPath, labelsPath, isGPU); // YOLOv11
     YOLO11Detector detector(modelPath, labelsPath, isGPU); // YOLOv11
 
     // Open the video file
