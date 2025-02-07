@@ -7,14 +7,26 @@ message(STATUS "ONNXRUNTIME_DIR: ${ONNXRUNTIME_DIR}")
 find_package(OpenCV REQUIRED)
 
 include_directories("include/")
+include_directories("/usr/include/opencv4/")
+
+set(ONNXRUNTIME_DIR "${CMAKE_SOURCE_DIR}/onnxruntime-linux-x64-1.19.2")
+
+include_directories(
+    "include/"
+    "/usr/include/opencv4/"
+    "${ONNXRUNTIME_DIR}/include"
+    "${ONNXRUNTIME_DIR}/include/onnxruntime/core"
+)
+
+link_directories(${ONNXRUNTIME_DIR}/lib)
 
 # Add executable for image inference
-#add_executable(image_inference
-#               src/image_inference.cpp)
-#
+add_executable(image_inference
+               src/image_inference.cpp)
+
 ## Add executable for camera inference
-#add_executable(camera_inference
-#               src/camera_inference.cpp)
+add_executable(camera_inference
+               src/camera_inference.cpp)
 
 # Add executable for video inference
 add_executable(video_inference
@@ -41,21 +53,22 @@ target_link_libraries(video_inference ${OpenCV_LIBS})
 if(WIN32)
     message(STATUS "We are building on Windows!")
     # Specific Linux build commands or flags
-#    target_link_libraries(image_inference "${ONNXRUNTIME_DIR}/lib/onnxruntime.lib")
-#    target_link_libraries(camera_inference "${ONNXRUNTIME_DIR}/lib/onnxruntime.lib")
+    target_link_libraries(image_inference "${ONNXRUNTIME_DIR}/lib/onnxruntime.lib")
+    target_link_libraries(camera_inference "${ONNXRUNTIME_DIR}/lib/onnxruntime.lib")
     target_link_libraries(video_inference "${ONNXRUNTIME_DIR}/lib/onnxruntime.lib")
 
 elseif(APPLE)
     message(STATUS "We are building on macOS!")
     # Specific macOS build commands or flags
-#    target_link_libraries(image_inference "${ONNXRUNTIME_DIR}/lib/libonnxruntime.dylib")
-#    target_link_libraries(camera_inference "${ONNXRUNTIME_DIR}/lib/libonnxruntime.dylib")
+    target_link_libraries(image_inference "${ONNXRUNTIME_DIR}/lib/libonnxruntime.dylib")
+    target_link_libraries(camera_inference "${ONNXRUNTIME_DIR}/lib/libonnxruntime.dylib")
     target_link_libraries(video_inference "${ONNXRUNTIME_DIR}/lib/libonnxruntime.dylib")
 
 elseif(UNIX)
     message(STATUS "We are building on Linux!")
     # Specific Linux build commands or flags
-#    target_link_libraries(image_inference "${ONNXRUNTIME_DIR}/lib/libonnxruntime.so")
-#    target_link_libraries(camera_inference "${ONNXRUNTIME_DIR}/lib/libonnxruntime.so")
-    target_link_libraries(video_inference "${ONNXRUNTIME_DIR}/lib/libonnxruntime.so")
+    target_link_libraries(video_inference ${OpenCV_LIBS} ${ONNXRUNTIME_DIR}/lib/libonnxruntime.so -pthread)
+    target_link_libraries(camera_inference ${OpenCV_LIBS} ${ONNXRUNTIME_DIR}/lib/libonnxruntime.so -pthread)
+    target_link_libraries(image_inference ${OpenCV_LIBS} ${ONNXRUNTIME_DIR}/lib/libonnxruntime.so -pthread)
+
 endif()
