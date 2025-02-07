@@ -51,8 +51,8 @@
 // #include "YOLO5.hpp"  // Uncomment for YOLOv5
 // #include "YOLO7.hpp"  // Uncomment for YOLOv7
 // #include "YOLO8.hpp"  // Uncomment for YOLOv8
-#include "YOLO10.hpp" // Uncomment for YOLOv10
-// #include "YOLO11.hpp" // Uncomment for YOLOv10
+// #include "YOLO10.hpp" // Uncomment for YOLOv10
+#include "YOLO11.hpp" // Uncomment for YOLOv10
 
 // Thread-safe queue implementation
 template <typename T>
@@ -95,17 +95,17 @@ private:
 int main()
 {
     // Paths to the model, labels, input video, and output video
-    const std::string labelsPath = "./models/coco.names";
-    const std::string videoPath = "./data/SIG_experience_center.mp4"; // Input video path
-    const std::string outputPath = "./data/SIG_experience_center_processed.mp4"; // Output video path
+    const std::string labelsPath = "../models/coco.names";
+    const std::string videoPath = "../data/SIG_experience_center.mp4"; // Input video path
+    const std::string outputPath = "../data/SIG_experience_center_processed.mp4"; // Output video path
 
     // Model paths for different YOLO versions
-    const std::string modelPath = "./models/yolo10n.onnx"; // YOLOv11
+    const std::string modelPath = "../models/yolo11n.onnx"; // YOLOv11
     printf("modelPath: %s\n", modelPath.c_str());
 
     // Initialize the YOLO detector
     bool isGPU = false; // Set to false for CPU processing
-    YOLO10Detector detector(modelPath, labelsPath, isGPU); // YOLOv11
+    YOLO11Detector detector(modelPath, labelsPath, isGPU); // YOLOv11
 
     // Open the video file
     cv::VideoCapture cap(videoPath);
