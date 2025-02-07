@@ -117,6 +117,11 @@ cd YOLOs-CPP
 ### Configure
 
 1. make sure you have opencv c++ installed
+```bash
+sudo apt update #&& sudo apt upgrade -y
+sudo apt-get install python3-opencv
+sudo apt-get install libopencv-dev
+```
 2. set the ONNX Runtime version you need e.g. ONNXRUNTIME_VERSION="1.16.3" in [build.sh](build.sh) to download ONNX Runtime headers also set GPU.
 3. Ensure that the you commented and uncomment the yolo version you need in the script you will run, select the data or the camera source in the code:
    
